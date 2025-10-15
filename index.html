@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J-Ventures Fund 3 Member Directory</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 50%, #f0f7ff 100%);
+            min-height: 100vh;
+        }
+        .header { 
+            background: white; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            padding: 2rem; 
+            text-align: center;
+            border-bottom: 3px solid #2563eb;
+        }
+        .logo { 
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+            color: white;
+            padding: 1.5rem 3rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            margin-bottom: 1rem;
+        }
+        .logo h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: 2px; }
+        .logo p { font-size: 0.875rem; color: #bfdbfe; margin-top: 0.25rem; }
+        .subtitle { color: #374151; font-size: 1.5rem; font-weight: 600; margin-top: 1rem; }
+        .member-count { color: #6b7280; margin-top: 0.5rem; }
+        
+        .stats-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 1.5rem; 
+            max-width: 1200px; 
+            margin: 2rem auto; 
+            padding: 0 2rem;
+        }
+        .stat-card { 
+            background: white;
+            border-radius: 12px; 
+            padding: 2rem; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-card.blue { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; }
+        .stat-card.purple { background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%); color: white; }
+        .stat-card.green { background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); color: white; }
+        .stat-card.orange { background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; }
+        .stat-number { font-size: 2.5rem; font-weight: 700; margin: 0.5rem 0; }
+        .stat-label { font-size: 0.875rem; opacity: 0.9; font-weight: 500; }
+        .stat-percent { font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        .search-box { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 2rem; 
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .search-input { 
+            width: 100%; 
+            padding: 1rem 1rem 1rem 3rem; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            font-size: 1rem;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cpath d='m21 21-4.35-4.35'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 12px center;
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { outline: none; border-color: #2563eb; }
+        
+        .filters { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+        .filter-btn { 
+            padding: 0.75rem 1.5rem; 
+            border: none; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            cursor: pointer;
+            background: #f3f4f6;
+            color: #374151;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: #e5e7eb; }
+        .filter-btn.active { background: #2563eb; color: white; }
+        .filter-btn.purple.active { background: #9333ea; }
+        .filter-btn.green.active { background: #16a34a; }
+        .filter-btn.orange.active { background: #ea580c; }
+        
+        .industry-select { 
+            width: 100%; 
+            padding: 0.75rem; 
+            border: 2px solid #e5e7eb; 
+            border-radius: 8px; 
+            font-size: 1rem;
+            margin-top: 1rem;
+            background: white;
+        }
+        .industry-select:focus { outline: none; border-color: #2563eb; }
+        
+        .results-count { margin-bottom: 1rem; color: #6b7280; font-weight: 500; }
+        
+        .member-grid { display: grid; gap: 1.5rem; }
+        .member-card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 2rem; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+        .member-card:hover { 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        .member-name { font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem; }
+        .member-title { color: #2563eb; font-weight: 600; margin-bottom: 1rem; }
+        .member-bio { color: #4b5563; line-height: 1.6; margin-bottom: 1rem; font-size: 0.875rem; }
+        .member-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+        .tag { 
+            padding: 0.375rem 0.75rem; 
+            border-radius: 9999px; 
+            font-size: 0.75rem; 
+            font-weight: 500;
+        }
+        .tag.company { background: #dbeafe; color: #1e40af; }
+        .tag.expertise { background: #dcfce7; color: #166534; }
+        .tag.location { background: #f3e8ff; color: #6b21a8; }
+        .linkedin-link { 
+            display: inline-block; 
+            margin-top: 1rem; 
+            color: #2563eb; 
+            text-decoration: none; 
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .linkedin-link:hover { color: #1e40af; }
+        .loading { text-align: center; padding: 4rem; color: #6b7280; }
+        
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .filters { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <h1>J-VENTURES</h1>
+            <p>STRONGER TOGETHER</p>
+        </div>
+        <div class="subtitle">Fund 3 Member Directory</div>
+        <div class="member-count" id="totalCount">Loading...</div>
+    </div>
+    
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card blue">
+            <div class="stat-label">Total Members</div>
+            <div class="stat-number" id="totalStat">-</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-label">Board Members</div>
+            <div class="stat-number" id="boardStat">-</div>
+            <div class="stat-percent" id="boardPercent">-</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">C-Level Executives</div>
+            <div class="stat-number" id="cLevelStat">-</div>
+            <div class="stat-percent" id="cLevelPercent">-</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-label">VCs/PE</div>
+            <div class="stat-number" id="vcStat">-</div>
+            <div class="stat-percent" id="vcPercent">-</div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="search-box">
+            <input 
+                type="text" 
+                class="search-input" 
+                id="searchInput" 
+                placeholder="Search by name, company, expertise, or industry..."
+            >
+            <div class="filters" id="filters">
+                <button class="filter-btn active" onclick="setFilter('all')">All</button>
+                <button class="filter-btn purple" onclick="setFilter('board')">Board Members</button>
+                <button class="filter-btn green" onclick="setFilter('clevel')">C-Level</button>
+                <button class="filter-btn orange" onclick="setFilter('vc')">VCs/PE</button>
+            </div>
+            <select class="industry-select" id="industrySelect">
+                <option value="all">All Industries</option>
+            </select>
+        </div>
+        
+        <div class="results-count" id="resultsCount">Loading members...</div>
+        <div class="member-grid" id="memberGrid">
+            <div class="loading">📊 Paste your CSV data below to load the directory...</div>
+        </div>
+    </div>
+    
+    <script>
+        // INSTRUCTIONS: Replace this placeholder with your actual CSV data
+        // You can paste the contents of your combined CSV file here
+        const CSV_DATA = `First and Last,Current Job Title,Summary of Bio,Companies associated with,Industry Expertise,Location (City),LinkedIn URL
+Abraham Sofaer,George P. Shultz Senior Fellow,Former U.S. District Judge for Southern District of New York (1979-1985) and George P. Shultz Distinguished Scholar at Hoover Institution at Stanford.,Zact,Medical Devices;FinTech,Palo Alto,
+        
+// PASTE YOUR CSV DATA ABOVE THIS LINE (replace the sample data)
+
+let allMembers = [];
+let filteredMembers = [];
+let currentFilter = 'all';
+let searchTerm = '';
+let selectedIndustry = 'all';
+
+function loadData() {
+    if (!CSV_DATA || CSV_DATA.trim().length < 100) {
+        document.getElementById('memberGrid').innerHTML = `
+            <div class="loading">
+                <h3>⚠️ No data loaded</h3>
+                <p>To use this directory, you need to embed your CSV data.</p>
+                <p>Open this HTML file in a text editor and paste your CSV data where indicated.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    Papa.parse(CSV_DATA, {
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            allMembers = results.data.filter(m => {
+                const name = (m['First and Last'] || '').toLowerCase();
+                return name.length > 0 && !name.includes('jonathan shapiro');
+            });
+            
+            // Remove duplicates
+            const seen = new Set();
+            allMembers = allMembers.filter(m => {
+                const key = (m['First and Last'] || '').toLowerCase().trim();
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            
+            updateStats();
+            updateIndustryFilter();
+            filterMembers();
+        }
+    });
+}
+
+function updateStats() {
+    const total = allMembers.length;
+    const board = allMembers.filter(m => 
+        `${m['Current Job Title']} ${m['Summary of Bio']}`.toLowerCase().match(/board|chairman|director/)
+    ).length;
+    const cLevel = allMembers.filter(m => 
+        (m['Current Job Title'] || '').toLowerCase().match(/\bceo|cfo|cto|cmo|coo\b/)
+    ).length;
+    const vc = allMembers.filter(m => 
+        `${m['Current Job Title']} ${m['Summary of Bio']}`.toLowerCase().match(/venture|capital|partner|investor/)
+    ).length;
+    
+    document.getElementById('totalCount').textContent = `Searchable network of ${total} members`;
+    document.getElementById('totalStat').textContent = total;
+    document.getElementById('boardStat').textContent = board;
+    document.getElementById('boardPercent').textContent = `${((board/total)*100).toFixed(1)}%`;
+    document.getElementById('cLevelStat').textContent = cLevel;
+    document.getElementById('cLevelPercent').textContent = `${((cLevel/total)*100).toFixed(1)}%`;
+    document.getElementById('vcStat').textContent = vc;
+    document.getElementById('vcPercent').textContent = `${((vc/total)*100).toFixed(1)}%`;
+}
+
+function updateIndustryFilter() {
+    const industries = {};
+    allMembers.forEach(m => {
+        const exp = m['Industry Expertise'] || '';
+        if (exp) {
+            exp.split(/[,;\n]/).forEach(ind => {
+                const clean = ind.trim();
+                if (clean.length > 2) {
+                    industries[clean] = (industries[clean] || 0) + 1;
+                }
+            });
+        }
+    });
+    
+    const select = document.getElementById('industrySelect');
+    select.innerHTML = '<option value="all">All Industries</option>';
+    Object.entries(industries)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 30)
+        .forEach(([ind, count]) => {
+            const option = document.createElement('option');
+            option.value = ind;
+            option.textContent = `${ind} (${count})`;
+            select.appendChild(option);
+        });
+}
+
+function setFilter(filter) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    filterMembers();
+}
+
+function filterMembers() {
+    filteredMembers = allMembers.filter(m => {
+        const searchText = `${m['First and Last']} ${m['Current Job Title']} ${m['Summary of Bio']} ${m['Companies associated with']} ${m['Industry Expertise']}`.toLowerCase();
+        const matchesSearch = !searchTerm || searchText.includes(searchTerm.toLowerCase());
+        
+        let matchesFilter = true;
+        if (currentFilter === 'board') {
+            matchesFilter = searchText.match(/board|chairman|director/);
+        } else if (currentFilter === 'clevel') {
+            matchesFilter = searchText.match(/\bceo|cfo|cto|cmo|coo\b/);
+        } else if (currentFilter === 'vc') {
+            matchesFilter = searchText.match(/venture|capital|partner|investor/);
+        }
+        
+        let matchesIndustry = selectedIndustry === 'all' || 
+            (m['Industry Expertise'] || '').toLowerCase().includes(selectedIndustry.toLowerCase());
+        
+        return matchesSearch && matchesFilter && matchesIndustry;
+    });
+    
+    renderMembers();
+}
+
+function renderMembers() {
+    document.getElementById('resultsCount').textContent = 
+        `Showing ${filteredMembers.length} of ${allMembers.length} members`;
+    
+    const grid = document.getElementById('memberGrid');
+    if (filteredMembers.length === 0) {
+        grid.innerHTML = '<div class="loading">No members found matching your criteria.</div>';
+        return;
+    }
+    
+    grid.innerHTML = filteredMembers.map(m => `
+        <div class="member-card">
+            <div class="member-name">${m['First and Last']}</div>
+            <div class="member-title">${m['Current Job Title'] || ''}</div>
+            ${m['Summary of Bio'] ? `<div class="member-bio">${m['Summary of Bio']}</div>` : ''}
+            <div class="member-tags">
+                ${m['Companies associated with'] ? 
+                    `<span class="tag company">🏢 ${m['Companies associated with'].split('\n')[0].substring(0, 40)}</span>` : ''}
+                ${m['Industry Expertise'] ? 
+                    `<span class="tag expertise">💡 ${m['Industry Expertise'].split(',')[0].substring(0, 40)}</span>` : ''}
+                ${m['Location (City)'] ? 
+                    `<span class="tag location">📍 ${m['Location (City)']}</span>` : ''}
+            </div>
+            ${m['LinkedIn URL'] ? 
+                `<a href="${m['LinkedIn URL']}" target="_blank" class="linkedin-link">View LinkedIn →</a>` : ''}
+        </div>
+    `).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value;
+    filterMembers();
+});
+
+document.getElementById('industrySelect').addEventListener('change', (e) => {
+    selectedIndustry = e.target.value;
+    filterMembers();
+});
+
+loadData();
+    </script>
+</body>
+</html>
